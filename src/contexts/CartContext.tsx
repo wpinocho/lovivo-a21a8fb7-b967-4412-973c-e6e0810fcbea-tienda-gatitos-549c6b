@@ -1,31 +1,26 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { CartItem, Kitten } from '../types/kitten';
+import { Kitten } from '../types/kitten';
+
+interface CartItem {
+  kitten: Kitten;
+  quantity: number;
+}
 
 interface CartContextType {
   items: CartItem[];
   addToCart: (kitten: Kitten) => void;
   removeFromCart: (kittenId: string) => void;
+  updateQuantity: (kittenId: string, quantity: number) => void;
   clearCart: () => void;
   getTotalPrice: () => number;
-  getItemCount: () => number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export const useCart = () => {
-  const context = useContext(CartContext);
-  if (!context) {
-    throw new Error('useCart must be used within a CartProvider');
-  }
-  return context;
-};
-
-interface CartProviderProps {
-  children: ReactNode;
-}
-
-export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
+export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>([]);
+
+  console.log('CartProvider rendering with', items.length, 'items');
 
   const addToCart = (kitten: Kitten) => {
     console.log('Adding kitten to cart:', kitten.name);
@@ -47,6 +42,21 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     setItems(prevItems => prevItems.filter(item => item.kitten.id !== kittenId));
   };
 
+  const updateQuantity = (kittenId: string, quantity: number) => {
+    console.log('Updating quantity for kitten:', kittenId, 'to:', quantity);
+    if (quantity <= 0) {
+      removeFromCart(kittenId);
+      return;
+    }
+    setItems(prevItems =>
+      prevItems.map(item =>
+        item.kitten.id === kittenId
+          ? { ...item, quantity }
+          : item
+      )
+    );
+  };
+
   const clearCart = () => {
     console.log('Clearing cart');
     setItems([]);
@@ -56,20 +66,24 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     return items.reduce((total, item) => total + (item.kitten.price * item.quantity), 0);
   };
 
-  const getItemCount = () => {
-    return items.reduce((count, item) => count + item.quantity, 0);
-  };
-
   return (
     <CartContext.Provider value={{
       items,
       addToCart,
       removeFromCart,
+      updateQuantity,
       clearCart,
-      getTotalPrice,
-      getItemCount
+      getTotalPrice
     }}>
       {children}
     </CartContext.Provider>
   );
+};
+
+export const useCart = () => {
+  const context = useContext(CartContext);
+  if (context === undefined) {
+    throw new Error('useCart must be used within a CartProvider');
+  }
+  return context;
 };

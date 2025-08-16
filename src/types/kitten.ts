@@ -6,12 +6,10 @@ export interface Kitten {
   price: number;
   image: string;
   description: string;
-  gender: 'male' | 'female';
+  personality: string[];
+  gender: 'Macho' | 'Hembra';
   vaccinated: boolean;
+  neutered: boolean;
   available: boolean;
-}
-
-export interface CartItem {
-  kitten: Kitten;
-  quantity: number;
+  gallery?: string[];
 }
